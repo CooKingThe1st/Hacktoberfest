@@ -1,0 +1,45 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const long long mod = 1e9;
+const int MAX_SIZE = 12; 
+// the maximum size that my computer can hold, coz the stack is limited 
+
+struct Matrix
+{
+    long long val[MAX_SIZE][MAX_SIZE]; 
+ 
+    void mem() // set value to 0
+    {
+        memset(val,0,sizeof(val));
+    }
+ 
+    Matrix operator * (const Matrix& B)
+    {
+        Matrix res; res.mem();
+        
+        for (int u = 1; u < MAX_SIZE; u++)
+            for (int v = 1; v < MAX_SIZE; v++)
+                for (int i = 1; i < MAX_SIZE; i++)
+                res.val[u][v] = (res.val[u][v] + val[u][i] * B.val[i][v]) % mod;
+                
+        return res;
+    }
+    
+};
+
+Matrix Power(Matrix A, long long b) // Matrix A power by b times
+{
+    Matrix C; C.mem(); // C is the identity matrix
+    for (int i = 1; i < MAX_SIZE; i++) 
+		C.val[i][i] = 1;
+		
+    for (; b; b /= 2, A = A*A) // actual multiple
+		if (b&1) C = C*A;
+    return C;
+}
+
+int main()
+{
+	return 0;
+}
