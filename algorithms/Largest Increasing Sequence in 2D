@@ -1,0 +1,111 @@
+#include<bits/stdc++.h>
+using namespace std;
+ 
+const int N = 100000 + 10; // max number of elements
+ 
+int n; // number of element
+map<int, int > M; // using map to simplified the input data
+pair<int, int > obj[N], org[N]; 
+// object and original, object is the input, and original is the backup
+ 
+vector<int > order[N], value[N];
+// order keep the order of the node in BIT2D
+// respectively, value keep the value of the node
+// noted that order and value is bi-linear
+ 
+int get(int x, int y)
+{
+	// <= x, <= y
+  // get the max value in the box with lower left is {0, 0} and upper right is {x, y}
+	int ans = 0;
+	for (; x > 0; x -= x & -x){
+		int bound = upper_bound(order[x].begin(), order[x].end(), y) - order[x].begin() - 1;
+    // the max bound that we would update
+		for (; bound > 0; bound -= bound & -bound)
+    // update at node bound and its child in value vector
+			ans = max(ans, value[x][bound]);
+	}
+	return ans;
+}
+ 
+void update(int x, int y, int delta)
+{
+  // set value at {x, y} to delta, and update {a, b} node where {a, b} > {x, y}
+	for (; x <= n; x += x & -x) // for x, then father of x
+  {
+		int bound = lower_bound(order[x].begin(), order[x].end(), y) - order[x].begin();
+    // bound is the first index which order[x][bound] >= y
+    // or the best index that we should begin to perform
+    
+		for (; bound < (int)order[x].size(); bound += bound & -bound)
+    // update at node bound and its father in value vector
+			value[x][bound] = max(value[x][bound], delta);
+	}
+}
+ 
+ // compare 2 pair in respect of second value
+ // to sort, actually
+bool cmp(const pair<int, int > &A, const pair<int, int > &B) 
+{ return A.second < B.second;}
+ 
+void init(){
+  // push all node with the same first value to the same vector
+  
+  // initial
+  // push back 0 so the vector is 1-indexed 
+	for (int i = 1; i <= n; i++)
+		M[obj[i].first] = 1, order[i].push_back(0), value[i].push_back(0);
+    
+  // set the first value so they > 0 and no gap
+	int counter = 0;
+	for (auto &itr : M)
+		M[itr.first] = ++counter;
+	for (int i = 1; i <= n; i++)
+		obj[i].first = M[obj[i].first];
+ 
+  // set the seconde value so they > 0 and no gap
+	counter = 0; M.clear();
+	for (int i = 1; i <= n; i++)
+		M[obj[i].second] = 1;
+	for (auto &itr : M)
+		M[itr.first] = ++ct;
+	for (int i = 1; i <= n; i++)
+		obj[i].second = M[obj[i].second];
+ 
+  // backup at org
+	for (int i = 1; i <= n; i++) org[i] = obj[i];
+  // sort obj with respect to second value
+	sort(obj + 1, obj + 1 + n, cmp);
+  
+  // crucial part
+  // with node{x, y}, append y to vector{x and its father}
+  // so that in each vector, the values are increasing
+  // and we have a copy of them in the upper vector
+	for (int i = 1; i <= n; i++)
+  {
+		for (int x = obj[i].first; x < N; x += x & -x)
+			order[x].push_back(obj[i].second),
+			value[x].push_back(0);
+	}
+}
+ 
+void solve(){
+	int ans = 0;
+	for (int i = 1; i <= n; i++){
+		int delta = 1 + get(org[i].first - 1, org[i].second - 1);
+    // delta = the largest size we could get with the end is pair {obj[i].first, obj[i].second}
+		ans = max(ans, delta);
+		update(org[i].first, org[i].second, delta);
+    // update with delta
+	}
+	cout << ans << '\n';
+}
+ 
+int main(){
+	scanf("%d", &n);
+	for (int i = 1; i <= n; i++)
+		scanf("%d%d", &obj[i].first, &obj[i].second);
+    
+	init();
+	solve();
+}
