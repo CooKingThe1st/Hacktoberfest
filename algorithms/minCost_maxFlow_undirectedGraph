@@ -1,0 +1,154 @@
+#include<bits/stdc++.h>
+
+using namespace std;
+
+const int N = 100 + 10; // size of graph
+const int M = N * N + 10; // size of edge
+
+int n, m, lim, S, F;
+// graph node, graph edge, limit capacity, source and sink
+
+int capa[N][N], cost[N][N];
+// capacity of edge, cost of edge
+
+struct Flow // our network
+{
+	int maxFlow, minCost;
+
+	int _s, _t;
+	struct RArc // Reverse Arc
+	{
+		int u, v;
+		int capau, capav;
+		int costu, costv;
+
+		int otherNode(int x) { return x ^ u ^ v; }
+
+		int &getCapa(int x) { return x == u ? capau : capav; }
+		int getCost(int x) { return x == u ? costu : costv; }
+	};
+	vector<RArc > arc; // list of arc
+	vector<int > adj[N]; // list of node's arc index
+
+	int mark[N]; // using for pape algorithm
+	deque<int > Q; // using for pape algorithm
+
+	long long D[N]; // using for pape algorithm
+	int trace[N]; // using for pape algorithm
+
+	void reset() // reset the mark and D, for pape algorithm
+	{
+		fill(mark + 1, mark + 1 + n, 2);
+		memset(D, 0x3f3f3f3f, sizeof D);
+	}
+
+	void pape() // d'esopo pape algorithm
+	{
+		mark[_s] = 1; 
+		Q.push_back(_s); 
+		D[_s] = 0;
+		while (!Q.empty())
+		{
+			int front = Q.front(); Q.pop_front();
+			mark[front] = 0;
+			for (int aid : adj[front]) // aid = adjacent arc index
+			{
+				int v = arc[aid].otherNode(front);
+
+				if (arc[aid].getCapa(front) <= 0) continue;
+				if (D[v] <= D[front] + arc[aid].getCost(front)) continue;
+
+				D[v] = D[front] + arc[aid].getCost(front);
+				trace[v] = aid;
+
+				if (mark[v] == 1) continue;
+				if (mark[v] == 0) Q.push_front(v);
+				else Q.push_back(v);
+				mark[v] = 1;
+			}
+		}
+	}
+
+	void traceOn() // trace back in pape algorithm to increase maxFlow
+	{
+		int openFlow = lim - maxFlow;
+		int cur = _t; // cur = current cumulate
+		while (cur != _s)
+		{
+			int aid = trace[cur];
+			int pre = arc[aid].otherNode(cur);
+			openFlow = min(openFlow, arc[aid].getCapa(pre));
+			cur = pre;
+		}
+
+		cur = _t;
+		while (cur != _s)
+		{
+			int aid = trace[cur];
+			int pre = arc[aid].otherNode(cur);
+			arc[aid].getCapa(pre) -= openFlow;
+			arc[aid].getCapa(cur) += openFlow;
+
+			cur = pre;
+		}
+
+		maxFlow += openFlow;
+		minCost += openFlow * D[_t];
+
+	}
+
+	void solve() // main of struct
+	{
+		while (maxFlow < lim)
+		{
+			reset();
+			pape();
+			if (D[_t] == D[0]) break;
+			traceOn();
+		}
+	}
+
+} flow;
+
+void init()
+{
+	flow._s = S; flow._t = F;
+	for (int i = 1; i <= n; i++)
+		for (int j = 1; j <= n; j++)
+			if (capa[i][j] > 0)
+			{
+				flow.adj[i].push_back(flow.arc.size());
+				flow.adj[j].push_back(flow.arc.size());
+				Flow::RArc tmpArc = {i, j, capa[i][j], 0, cost[i][j], -cost[i][j]};
+				flow.arc.push_back(tmpArc);
+			}
+}
+
+void traceFlow() // find the actual flow and print it
+{
+	cout << flow.minCost << '\n';
+	for (auto itr : flow.arc)
+	{
+		if (itr.capav == 0) continue;
+		cout << itr.u << ' ' << itr.v << ' ' << itr.capav << '\n';
+	}
+	cout << "0 0 0\n";
+}
+
+main()
+{
+	ios::sync_with_stdio(0); cin.tie(0); cout.tie(0);
+	
+	cin >> n >> m >> lim >> S >> F;
+	for (int i = 1; i <= m; i++)
+	{
+		int u, v, d, c;
+		cin >> u >> v >> d >> c;
+		capa[u][v] = capa[v][u] = c;
+		cost[u][v] = cost[v][u] = d;
+	}	
+
+	init();
+	flow.solve();
+	traceFlow();
+}
