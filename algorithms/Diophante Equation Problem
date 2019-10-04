@@ -1,0 +1,65 @@
+#include<bits/stdc++.h>
+
+#define int long long 
+// i know bad habit, but for the sake of this problem only
+using namespace std;
+
+typedef pair<int, int > pii;
+
+template<class T > // use only with signed int and long long
+inline T add(T a, T b, T mod) // add 2 numbers then mod
+{ 
+    T c = a - mod + b; 
+    c %= mod;
+    if (c < 0) c += mod;
+    return c;
+}
+
+template<class T > // same guarantee above
+inline T mul(T a, T b, T mod) // multiple 2 numbers then mod
+{
+    T c = 0;
+    bool flag = 0;
+    if (b < 0) flag = 1, b = -b;
+    for (; b > 0; b /= 2, a = add(a, a, mod))
+        if (b & 1) c = add(c, a, mod);
+    if (flag) c = -c;
+    return c;
+}
+
+pii getDiophante(int a, int b, int c) //  ax + by = c, return 1 pair {x, y}
+{
+  // simplified equation
+	int cc = __gcd(a, b);
+	if (c % cc != 0) { return {-1, -1}; };
+	cc = __gcd(cc, c);
+	c /= cc;
+	a /= cc;
+	b /= cc;
+
+  // get the same signed, to compute
+	bool flag = 0;
+	if (a < 0) {a = -a; b = -b; c = -c;}
+	if (b < 0) { b = -b, c = -c; flag = 1; }
+
+	pii na = {1, 0};
+	pii nb = {0, 1};
+
+	while (b > 0) // euler part
+	{
+		int q = a / b;
+		int r = a - q * b;
+		pii nr = {na.first - q * nb.first, na.second - q * nb.second};
+
+		na = nb; a = b;
+		nb = nr; b = r;
+	}
+	if (flag) na.second = -na.second; // if change sign above, then revert it again.
+
+	return {na.first * c, na.second * c};
+}
+
+main()
+{
+  return 0;
+}
